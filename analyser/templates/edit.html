@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Edit Resume</title>
+    <style>
+        body{
+            font-family:Arial;
+            background:#f2f2f2;
+            padding:40px;
+        }
+        .box{
+            width:500px;
+            margin:auto;
+            background:white;
+            padding:25px;
+            border-radius:12px;
+            box-shadow:0 0 10px gray;
+        }
+        input, textarea{
+            width:100%;
+            padding:10px;
+            margin:10px 0;
+        }
+        button{
+            background:blue;
+            color:white;
+            border:none;
+            padding:10px 20px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="box">
+<h2>Edit Resume</h2>
+
+<form method="POST">
+{% csrf_token %}
+<input type="text" name="name" value="{{ resume.name }}">
+<input type="email" name="email" value="{{ resume.email }}">
+<textarea name="skills">{{ resume.skills }}</textarea>
+<button type="submit">Update</button>
+</form>
+
+</div>
+
+</body>
+</html>

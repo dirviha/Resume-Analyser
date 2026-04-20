@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Resume Checker Dashboard</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{
+font-family:Arial,sans-serif;
+background:#f4f7fb;
+color:#1f2937;
+}
+.container{
+width:95%;
+max-width:1400px;
+margin:auto;
+padding:20px 0;
+}
+.topbar{
+display:flex;
+justify-content:space-between;
+align-items:center;
+margin-bottom:20px;
+}
+.logo{
+font-size:30px;
+font-weight:700;
+color:#10b981;
+}
+.menu a{
+text-decoration:none;
+margin-left:20px;
+color:#374151;
+font-weight:600;
+}
+.grid{
+display:grid;
+grid-template-columns:320px 1fr;
+gap:20px;
+}
+.card{
+background:#fff;
+border-radius:18px;
+padding:22px;
+box-shadow:0 8px 20px rgba(0,0,0,.06);
+}
+.score-box{text-align:center;}
+.circle{
+width:160px;
+height:160px;
+border-radius:50%;
+border:12px solid #10b981;
+display:flex;
+align-items:center;
+justify-content:center;
+margin:10px auto;
+font-size:36px;
+font-weight:bold;
+color:#10b981;
+}
+.muted{
+color:#6b7280;
+font-size:14px;
+}
+.side-list{margin-top:18px;}
+.side-item{
+display:flex;
+justify-content:space-between;
+padding:10px 0;
+border-bottom:1px solid #eee;
+font-size:15px;
+}
+.good{color:#10b981;font-weight:bold;}
+.bad{color:#ef4444;font-weight:bold;}
+.warn{color:#f59e0b;font-weight:bold;}
+
+input{
+width:100%;
+padding:12px;
+border:1px solid #d1d5db;
+border-radius:10px;
+margin:10px 0;
+}
+
+button{
+background:#10b981;
+color:#fff;
+border:none;
+padding:12px 18px;
+border-radius:10px;
+cursor:pointer;
+font-weight:bold;
+width:100%;
+}
+button:hover{
+background:#059669;
+}
+
+.section-title{
+font-size:24px;
+font-weight:700;
+margin-bottom:16px;
+}
+
+.stats{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+gap:15px;
+margin-bottom:20px;
+}
+
+.stat{
+padding:18px;
+border-radius:14px;
+}
+
+.green{background:#ecfdf5;}
+.blue{background:#eff6ff;}
+.yellow{background:#fef3c7;}
+.pink{background:#fdf2f8;}
+
+.progress{
+height:10px;
+background:#e5e7eb;
+border-radius:20px;
+overflow:hidden;
+margin-top:8px;
+}
+.progress div{
+height:100%;
+background:#10b981;
+}
+
+.tip{
+padding:14px;
+border-left:5px solid #10b981;
+background:#f9fafb;
+border-radius:10px;
+margin-bottom:12px;
+}
+
+table{
+width:100%;
+border-collapse:collapse;
+margin-top:10px;
+}
+th,td{
+padding:12px;
+border-bottom:1px solid #eee;
+text-align:left;
+}
+th{
+background:#f9fafb;
+}
+.action a{
+text-decoration:none;
+margin-right:10px;
+font-weight:bold;
+}
+.delete{color:#dc2626;}
+
+@media(max-width:950px){
+.grid{
+grid-template-columns:1fr;
+}
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+<div class="topbar">
+<div class="logo">ResumeAI</div>
+<div class="menu">
+<a href="#">Dashboard</a>
+<a href="#">Analyzer</a>
+<a href="/admin">Admin</a>
+</div>
+</div>
+
+<div class="grid">
+
+<!-- LEFT PANEL -->
+<div>
+
+<div class="card score-box">
+<h2>Your Score</h2>
+
+<div class="circle">
+{% if top %}{{ top.score }}{% else %}0{% endif %}
+</div>
+
+<p class="muted">{{ rank }}</p>
+
+<div class="side-list">
+<div class="side-item">
+<span>ATS Parse Rate</span>
+<span class="warn">{{ parse_rate }}%</span>
+</div>
+
+<div class="side-item">
+<span>Keyword Match</span>
+<span class="good">{% if top %}{{ top.score }}{% else %}0{% endif %}%</span>
+</div>
+
+<div class="side-item">
+<span>Formatting</span>
+<span class="good">85%</span>
+</div>
+
+<div class="side-item">
+<span>Issues Found</span>
+<span class="bad">{{ issues }}</span>
+</div>
+
+<div class="side-item">
+<span>Missing Skills</span>
+<span class="warn">{{ missing }}</span>
+</div>
+</div>
+</div>
+
+<div class="card" style="margin-top:20px;">
+<h3 style="margin-bottom:10px;">Upload Resume</h3>
+
+<form method="POST" enctype="multipart/form-data">
+{% csrf_token %}
+<input type="file" name="file" required>
+<button type="submit">Analyze Resume</button>
+</form>
+</div>
+
+</div>
+
+<!-- RIGHT PANEL -->
+<div>
+
+<div class="card">
+
+<div class="section-title">Resume Analytics</div>
+
+<div class="stats">
+
+<div class="stat green">
+<h4>Overall Score</h4>
+<p style="font-size:28px;margin-top:8px;">
+{% if top %}{{ top.score }}%{% else %}0%{% endif %}
+</p>
+</div>
+
+<div class="stat blue">
+<h4>Ranking</h4>
+<p style="font-size:24px;margin-top:8px;">{{ rank }}</p>
+</div>
+
+<div class="stat yellow">
+<h4>Keywords Found</h4>
+<p style="font-size:24px;margin-top:8px;">
+{% if top %}{{ top.skills|length }}{% else %}0{% endif %}
+</p>
+</div>
+
+<div class="stat pink">
+<h4>Issues Found</h4>
+<p style="font-size:24px;margin-top:8px;">{{ issues }}</p>
+</div>
+
+</div>
+
+<h3 style="margin:20px 0 10px;">Performance Breakdown</h3>
+
+<p>ATS Compatibility</p>
+<div class="progress">
+<div style="width:{% if top %}{{ top.score }}{% else %}0{% endif %}%"></div>
+</div>
+
+<p style="margin-top:12px;">Skills Match</p>
+<div class="progress">
+<div style="width:{% if top %}{{ top.score|add:'-5' }}{% else %}0{% endif %}%"></div>
+</div>
+
+<p style="margin-top:12px;">Readability</p>
+<div class="progress">
+<div style="width:82%"></div>
+</div>
+
+<p style="margin-top:12px;">Formatting</p>
+<div class="progress">
+<div style="width:88%"></div>
+</div>
+
+</div>
+
+<div class="card" style="margin-top:20px;">
+<h2 style="margin-bottom:15px;">Smart Recommendations</h2>
+
+{% if tips %}
+{% for tip in tips %}
+<div class="tip">{{ tip }}</div>
+{% endfor %}
+{% else %}
+<div class="tip">Upload a resume to get personalized recommendations.</div>
+{% endif %}
+
+<div class="tip">Use measurable achievements like increased sales by 20%.</div>
+<div class="tip">Add LinkedIn or portfolio links.</div>
+<div class="tip">Use ATS-friendly keywords from job description.</div>
+</div>
+
+<div class="card" style="margin-top:20px;">
+<h2 style="margin-bottom:15px;">Saved Candidates</h2>
+
+<table>
+<tr>
+<th>Candidate</th>
+<th>Skills</th>
+<th>Score</th>
+<th>Action</th>
+</tr>
+
+{% for i in data %}
+<tr>
+<td>{{ i.name }}</td>
+<td>{{ i.skills }}</td>
+<td>{{ i.score }}%</td>
+<td class="action">
+<a href="/report/{{ i.id }}/">Report</a>
+<a class="delete" href="/delete/{{ i.id }}/">Delete</a>
+</td>
+</tr>
+{% endfor %}
+
+</table>
+</div>
+
+</div>
+</div>
+
+</div>
+</body>
+</html>
