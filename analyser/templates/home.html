@@ -3,113 +3,116 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Smart Resume Analyzer</title>
+<title>AI Resume Critiquer</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{
 font-family:Arial,sans-serif;
-background:linear-gradient(135deg,#eef7ff,#f7f7ff,#eefcf7);
-color:#1f2937;
+background:linear-gradient(135deg,#fffdf5,#ffffff,#fff8d6);
+color:#111827;
 }
-.container{width:95%;max-width:1350px;margin:auto;padding:20px 0}
-.topbar{
-display:flex;justify-content:space-between;align-items:center;
-margin-bottom:20px
-}
-.logo{font-size:30px;font-weight:700;color:#10b981}
-.menu a{
-text-decoration:none;margin-left:18px;
-color:#374151;font-weight:600
-}
-.grid{
-display:grid;
-grid-template-columns:320px 1fr;
-gap:20px;
+.container{
+width:92%;
+max-width:1000px;
+margin:auto;
+padding:40px 0;
 }
 .card{
-background:#fff;
-border-radius:18px;
-padding:22px;
-box-shadow:0 8px 20px rgba(0,0,0,.06);
+background:#ffffff;
+border:1px solid #f3e8a6;
+border-radius:22px;
+padding:30px;
+box-shadow:0 10px 30px rgba(0,0,0,.06);
 }
-.circle{
-width:160px;height:160px;border-radius:50%;
-border:12px solid #10b981;
-display:flex;align-items:center;justify-content:center;
-margin:10px auto;
-font-size:36px;font-weight:bold;color:#10b981;
+h1{
+font-size:48px;
+margin-bottom:10px;
+color:#111827;
 }
-.center{text-align:center}
-.muted{color:#6b7280;font-size:14px}
-.side-item{
-display:flex;justify-content:space-between;
-padding:10px 0;border-bottom:1px solid #eee;
+.sub{
+color:#6b7280;
+margin-bottom:25px;
+font-size:16px;
 }
-.good{color:#10b981;font-weight:bold}
-.bad{color:#ef4444;font-weight:bold}
-.warn{color:#f59e0b;font-weight:bold}
-
-input,select{
+label{
+display:block;
+font-weight:700;
+margin:18px 0 8px;
+}
+input, textarea, select{
 width:100%;
-padding:12px;
-border:1px solid #d1d5db;
-border-radius:10px;
-margin:10px 0;
+padding:14px;
+border:1px solid #e5e7eb;
+border-radius:12px;
+font-size:15px;
+background:#fff;
+}
+input:focus, textarea:focus, select:focus{
+outline:none;
+border-color:#facc15;
+box-shadow:0 0 0 4px rgba(250,204,21,.15);
 }
 button{
-width:100%;
-padding:12px;
+margin-top:18px;
+background:#facc15;
+color:#111827;
 border:none;
-border-radius:10px;
-background:#10b981;
-color:#fff;
-font-weight:bold;
+padding:14px 22px;
+border-radius:12px;
+font-weight:700;
 cursor:pointer;
+font-size:15px;
 }
-button:hover{background:#059669}
-
-.stats{
-display:grid;
-grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
-gap:15px;
-margin-bottom:20px;
+button:hover{
+background:#eab308;
 }
-.stat{padding:18px;border-radius:14px}
-.green{background:#ecfdf5}
-.blue{background:#eff6ff}
-.yellow{background:#fef3c7}
-.pink{background:#fdf2f8}
-
-.progress{
-height:10px;background:#e5e7eb;
-border-radius:20px;overflow:hidden;margin-top:8px;
+.result{
+margin-top:28px;
+padding:25px;
+background:#fffef7;
+border:1px solid #fde68a;
+border-radius:18px;
 }
-.progress div{
-height:100%;
-background:#10b981;
+.result h2{
+margin-bottom:15px;
+font-size:30px;
 }
-
-.badge{
-display:inline-block;
-padding:8px 12px;
-margin:5px;
-border-radius:20px;
-font-size:14px;
-font-weight:600;
+.block{
+margin-bottom:22px;
+padding-bottom:18px;
+border-bottom:1px solid #f3f4f6;
 }
-.skill{background:#dcfce7;color:#166534}
-.miss{background:#fee2e2;color:#991b1b}
-
-.tip{
-padding:14px;
+.block:last-child{
+border-bottom:none;
+margin-bottom:0;
+padding-bottom:0;
+}
+.block h3{
+font-size:22px;
 margin-bottom:10px;
-border-left:5px solid #10b981;
-background:#f9fafb;
-border-radius:10px;
+color:#92400e;
 }
-
-@media(max-width:950px){
-.grid{grid-template-columns:1fr}
+ul{
+padding-left:20px;
+line-height:1.8;
+}
+.score{
+display:inline-block;
+padding:10px 16px;
+border-radius:999px;
+background:#fef3c7;
+font-weight:700;
+margin-top:10px;
+}
+.footer{
+text-align:center;
+margin-top:25px;
+color:#6b7280;
+font-size:14px;
+}
+@media(max-width:768px){
+h1{font-size:34px}
+.card{padding:20px}
 }
 </style>
 </head>
@@ -117,161 +120,111 @@ border-radius:10px;
 
 <div class="container">
 
-<div class="topbar">
-<div class="logo">ResumeAI</div>
-<div class="menu">
-<a href="#">Dashboard</a>
-<a href="#">Analyzer</a>
-<a href="/admin">Admin</a>
-</div>
-</div>
+<div class="card">
 
-<div class="grid">
-
-<!-- LEFT -->
-<div>
-
-<div class="card center">
-<h2>Your Score</h2>
-
-<div class="circle">
-{% if top %}{{ top.score }}{% else %}0{% endif %}
-</div>
-
-<p class="muted">{{ rank }}</p>
-
-<div class="side-item">
-<span>ATS Parse Rate</span>
-<span class="warn">{{ parse_rate }}%</span>
-</div>
-
-<div class="side-item">
-<span>Issues Found</span>
-<span class="bad">{{ issues }}</span>
-</div>
-
-<div class="side-item">
-<span>Missing Skills</span>
-<span class="warn">{{ missing }}</span>
-</div>
-</div>
-
-<div class="card" style="margin-top:20px;">
-<h3>Upload Resume</h3>
+<h1>AI Resume Critiquer</h1>
+<p class="sub">Upload your resume and get AI-powered feedback tailored to your target role.</p>
 
 <form method="POST" enctype="multipart/form-data">
 {% csrf_token %}
 
-<select name="jobrole">
-<option value="">Select Job Role</option>
-<option value="python developer">Python Developer</option>
-<option value="data analyst">Data Analyst</option>
-<option value="web developer">Web Developer</option>
-</select>
-
+<label>Upload Resume (PDF)</label>
 <input type="file" name="file" required>
+
+<label>Target Job Role</label>
+<input type="text" name="jobrole" placeholder="Example: Python Developer">
+
 <button type="submit">Analyze Resume</button>
 </form>
+
+<div class="result">
+
+<h2>Analysis Results</h2>
+
+<div class="block">
+<h3>Overall Result</h3>
+<p>Your current ranking: <strong>{{ rank }}</strong></p>
+<p class="score">Score: {% if top %}{{ top.score }}{% else %}0{% endif %}%</p>
 </div>
 
-</div>
-
-<!-- RIGHT -->
-<div>
-
-<div class="card">
-
-<h2 style="margin-bottom:15px;">Resume Analytics</h2>
-
-<div class="stats">
-
-<div class="stat green">
-<h4>Overall Score</h4>
-<p style="font-size:28px;margin-top:8px;">
-{% if top %}{{ top.score }}%{% else %}0%{% endif %}
-</p>
-</div>
-
-<div class="stat blue">
-<h4>Ranking</h4>
-<p style="font-size:24px;margin-top:8px;">{{ rank }}</p>
-</div>
-
-<div class="stat yellow">
-<h4>Job Role</h4>
-<p style="font-size:20px;margin-top:8px;">
-{{ role|title }}
-</p>
-</div>
-
-<div class="stat pink">
-<h4>Keywords Found</h4>
-<p style="font-size:24px;margin-top:8px;">
-{% if top %}{{ top.skills|length }}{% else %}0{% endif %}
-</p>
-</div>
-
-</div>
-
-<h3 style="margin:18px 0 10px;">Performance Breakdown</h3>
-
-<p>ATS Compatibility</p>
-<div class="progress">
-<div style="width:{% if top %}{{ top.score }}{% else %}0{% endif %}%"></div>
-</div>
-
-<p style="margin-top:12px;">Skills Match</p>
-<div class="progress">
-<div style="width:{% if top %}{{ top.score|add:'-5' }}{% else %}0{% endif %}%"></div>
-</div>
-
-<p style="margin-top:12px;">Readability</p>
-<div class="progress"><div style="width:82%"></div></div>
-
-<p style="margin-top:12px;">Formatting</p>
-<div class="progress"><div style="width:88%"></div></div>
-
-</div>
-
-<div class="card" style="margin-top:20px;">
-<h2 style="margin-bottom:10px;">Detected Skills</h2>
+<div class="block">
+<h3>Detected Skills</h3>
 
 {% if top and top.skills %}
-{% for s in top.skills.split(',') %}
-<span class="badge skill">{{ s }}</span>
-{% endfor %}
+<ul>
+<li>{{ top.skills }}</li>
+</ul>
 {% else %}
 <p>No skills detected yet.</p>
 {% endif %}
+
+</div><div class="block">
+<h3>Detected Skills</h3>
+
+{% if top and top.skills %}
+<ul>
+<li>{{ top.skills }}</li>
+</ul>
+{% else %}
+<p>No skills detected yet.</p>
+{% endif %}
+
+</div><div class="block">
+<h3>Detected Skills</h3>
+
+{% if top and top.skills %}
+<ul>
+<li>{{ top.skills }}</li>
+</ul>
+{% else %}
+<p>No skills detected yet.</p>
+{% endif %}
+
 </div>
-
-<div class="card" style="margin-top:20px;">
-<h2 style="margin-bottom:10px;">Missing Skills</h2>
-
+<div class="block">
+<h3>Missing Skills</h3>
 {% if missing_list %}
+<ul>
 {% for m in missing_list %}
-<span class="badge miss">{{ m }}</span>
+<li>{{ m }}</li>
 {% endfor %}
+</ul>
 {% else %}
 <p>No missing skills detected.</p>
 {% endif %}
 </div>
 
-<div class="card" style="margin-top:20px;">
-<h2 style="margin-bottom:10px;">Smart Recommendations</h2>
-
+<div class="block">
+<h3>Recommendations</h3>
 {% if tips %}
+<ul>
 {% for tip in tips %}
-<div class="tip">{{ tip }}</div>
+<li>{{ tip }}</li>
 {% endfor %}
+</ul>
 {% else %}
-<div class="tip">Upload resume to get recommendations.</div>
+<p>Upload your resume to get personalized suggestions.</p>
 {% endif %}
 </div>
 
-</div>
+<div class="block">
+<h3>ATS Insights</h3>
+<ul>
+<li>ATS Parse Rate: {{ parse_rate }}%</li>
+<li>Issues Found: {{ issues }}</li>
+<li>Use role-specific keywords in your resume.</li>
+<li>Add measurable achievements and projects.</li>
+</ul>
 </div>
 
 </div>
+
+<div class="footer">
+Built with Django • AI Resume Analyzer
+</div>
+
+</div>
+</div>
+
 </body>
 </html>

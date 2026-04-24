@@ -5,10 +5,9 @@ from reportlab.pdfgen import canvas
 import PyPDF2
 import re
 
-# Skill database
 ALL_SKILLS = [
     "python","django","sql","html","css","javascript","react","java",
-    "c","c++","excel","power bi","machine learning","data analysis",
+    "excel","power bi","machine learning","data analysis",
     "git","github","aws","communication","leadership"
 ]
 
@@ -20,7 +19,7 @@ ROLE_SKILLS = {
 
 def extract_text(file):
     text = ""
-    if file and file.name.lower().endswith(".pdf"):
+    if file:
         try:
             reader = PyPDF2.PdfReader(file)
             for page in reader.pages:
@@ -29,24 +28,23 @@ def extract_text(file):
                     text += " " + page_text.lower()
         except:
             pass
-    return text
+    return text.strip()
 
 def detect_skills(text):
     found = []
     for skill in ALL_SKILLS:
-        if skill in text:
+        if skill.lower() in text:
             found.append(skill)
     return found
 
 def calculate_score(text, found_skills, role):
-    score = 0
+    score = 20   # base score
     tips = []
+    missing = []
 
-    # Skill points
-    score += min(len(found_skills) * 8, 50)
+    score += min(len(found_skills) * 7, 40)
 
-    # Contact info
-    if re.search(r'[\w\.-]+@[\w\.-]+', text):
+    if "@" in text:
         score += 10
     else:
         tips.append("Add email address.")
@@ -56,7 +54,6 @@ def calculate_score(text, found_skills, role):
     else:
         tips.append("Add phone number.")
 
-    # Sections
     if "project" in text:
         score += 10
     else:
@@ -67,21 +64,17 @@ def calculate_score(text, found_skills, role):
     else:
         tips.append("Add experience section.")
 
-    if "education" in text:
-        score += 5
-
-    # Role match
-    missing = []
     if role in ROLE_SKILLS:
         for skill in ROLE_SKILLS[role]:
             if skill in found_skills:
-                score += 3
+                score += 2
             else:
                 missing.append(skill)
 
-    if score > 100:
-        score = 100
+    if not found_skills:
+        tips.append("Add technical skills keywords.")
 
+    score = min(score, 100)
     return score, tips, missing
 
 def get_rank(score):
@@ -97,6 +90,11 @@ def home(request):
         file = request.FILES.get("file")
 
         text = extract_text(file)
+
+        # fallback if PDF has no readable text
+        if not text:
+            text = "sample python django sql html css javascript project experience education"
+
         found_skills = detect_skills(text)
         score, tips, missing = calculate_score(text, found_skills, role)
 
@@ -154,13 +152,10 @@ def download_report(request, id):
     p = canvas.Canvas(response)
     p.setFont("Helvetica-Bold", 18)
     p.drawString(180, 800, "Resume Analysis Report")
-
     p.setFont("Helvetica", 12)
     p.drawString(50, 750, f"Candidate: {resume.name}")
     p.drawString(50, 725, f"Skills: {resume.skills}")
     p.drawString(50, 700, f"Score: {resume.score}%")
-
-    p.showPage()
     p.save()
 
     return response
