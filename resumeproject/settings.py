@@ -23,9 +23,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-lk^+gc4hezrfxd72ynykrnhnjx4!ao$%e%v-kmzqc_z%d*xl$7'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['resume-analyser-7l25.onrender.com', '127.0.0.1', 'localhost']
 
 
 # Application definition
