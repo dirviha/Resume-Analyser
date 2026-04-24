@@ -1,120 +1,164 @@
 from django.shortcuts import render, redirect
 from .models import Resume
-import PyPDF2
 from django.http import HttpResponse
 from reportlab.pdfgen import canvas
+import PyPDF2
+import re
 
-def home(request):
-    if request.method == 'POST':
-        file = request.FILES.get('file')
-        text = ""
+# Skill database
+ALL_SKILLS = [
+    "python","django","sql","html","css","javascript","react","java",
+    "c","c++","excel","power bi","machine learning","data analysis",
+    "git","github","aws","communication","leadership"
+]
 
-        if file and file.name.endswith('.pdf'):
+ROLE_SKILLS = {
+    "python developer": ["python","django","sql","git","github"],
+    "data analyst": ["python","sql","excel","power bi","data analysis"],
+    "web developer": ["html","css","javascript","react","git"]
+}
+
+def extract_text(file):
+    text = ""
+    if file and file.name.lower().endswith(".pdf"):
+        try:
             reader = PyPDF2.PdfReader(file)
             for page in reader.pages:
                 page_text = page.extract_text()
                 if page_text:
-                    text += page_text.lower()
+                    text += " " + page_text.lower()
+        except:
+            pass
+    return text
 
-        keywords = {
-            "python":30,
-            "django":25,
-            "sql":20,
-            "html":10,
-            "css":10,
-            "javascript":15,
-            "machine learning":30,
-            "excel":10,
-            "power bi":20
-        }
+def detect_skills(text):
+    found = []
+    for skill in ALL_SKILLS:
+        if skill in text:
+            found.append(skill)
+    return found
 
-        found = []
-        score = 0
+def calculate_score(text, found_skills, role):
+    score = 0
+    tips = []
 
-        for key,val in keywords.items():
-            if key in text:
-                found.append(key)
-                score += val
+    # Skill points
+    score += min(len(found_skills) * 8, 50)
 
-        if score > 100:
-            score = 100
+    # Contact info
+    if re.search(r'[\w\.-]+@[\w\.-]+', text):
+        score += 10
+    else:
+        tips.append("Add email address.")
+
+    if re.search(r'\d{10}', text):
+        score += 10
+    else:
+        tips.append("Add phone number.")
+
+    # Sections
+    if "project" in text:
+        score += 10
+    else:
+        tips.append("Add projects section.")
+
+    if "experience" in text:
+        score += 10
+    else:
+        tips.append("Add experience section.")
+
+    if "education" in text:
+        score += 5
+
+    # Role match
+    missing = []
+    if role in ROLE_SKILLS:
+        for skill in ROLE_SKILLS[role]:
+            if skill in found_skills:
+                score += 3
+            else:
+                missing.append(skill)
+
+    if score > 100:
+        score = 100
+
+    return score, tips, missing
+
+def get_rank(score):
+    if score >= 80:
+        return "Advanced"
+    elif score >= 55:
+        return "Intermediate"
+    return "Beginner"
+
+def home(request):
+    if request.method == "POST":
+        role = request.POST.get("jobrole", "").lower()
+        file = request.FILES.get("file")
+
+        text = extract_text(file)
+        found_skills = detect_skills(text)
+        score, tips, missing = calculate_score(text, found_skills, role)
 
         Resume.objects.create(
             name="Candidate",
             email="hidden@email.com",
-            skills=", ".join(found),
+            skills=", ".join(found_skills),
             file=file,
             score=score
         )
 
-        return redirect('/')
+        request.session["tips"] = tips
+        request.session["missing"] = missing
+        request.session["role"] = role
 
-    data = Resume.objects.all()
-    top = Resume.objects.order_by('-id').first()
+        return redirect("/")
 
-    tips = []
-    missing = 0
-    issues = 0
-    parse_rate = 0
-    rank = "Beginner"
+    data = Resume.objects.all().order_by("-id")
+    top = data.first()
 
-    if top:
-        all_skills = ["python","django","sql","html","css","javascript"]
-        found_skills = top.skills.lower()
+    tips = request.session.get("tips", [])
+    missing = request.session.get("missing", [])
+    role = request.session.get("role", "")
 
-        for s in all_skills:
-            if s not in found_skills:
-                missing += 1
+    score = top.score if top else 0
+    rank = get_rank(score)
+    parse_rate = min(score + 5, 100)
+    issues = max(0, 5 - (score // 20))
 
-        if top.score < 50:
-            issues = 5
-            parse_rate = 55
-            rank = "Beginner"
-            tips.append("Add more technical keywords.")
-            tips.append("Improve ATS readability.")
-        elif top.score < 80:
-            issues = 2
-            parse_rate = 78
-            rank = "Intermediate"
-            tips.append("Add projects and achievements.")
-        else:
-            issues = 0
-            parse_rate = 95
-            rank = "Advanced"
-            tips.append("Excellent ATS-ready resume.")
-
-    return render(request,'home.html',{
-        'data':data,
-        'top':top,
-        'tips':tips,
-        'missing':missing,
-        'issues':issues,
-        'parse_rate':parse_rate,
-        'rank':rank
+    return render(request, "home.html", {
+        "data": data,
+        "top": top,
+        "tips": tips,
+        "missing": len(missing),
+        "missing_list": missing,
+        "rank": rank,
+        "parse_rate": parse_rate,
+        "issues": issues,
+        "role": role
     })
 
-def delete_resume(request,id):
+def delete_resume(request, id):
     Resume.objects.get(id=id).delete()
-    return redirect('/')
+    return redirect("/")
 
-def edit_resume(request,id):
-    return redirect('/')
+def edit_resume(request, id):
+    return redirect("/")
 
-def download_report(request,id):
+def download_report(request, id):
     resume = Resume.objects.get(id=id)
 
     response = HttpResponse(content_type='application/pdf')
-    response['Content-Disposition'] = 'attachment; filename=\"resume_report.pdf\"'
+    response['Content-Disposition'] = 'attachment; filename="resume_report.pdf"'
 
     p = canvas.Canvas(response)
-    p.setFont("Helvetica-Bold",18)
-    p.drawString(180,800,"Resume Analysis Report")
+    p.setFont("Helvetica-Bold", 18)
+    p.drawString(180, 800, "Resume Analysis Report")
 
-    p.setFont("Helvetica",12)
-    p.drawString(50,750,f"Candidate: {resume.name}")
-    p.drawString(50,725,f"Skills: {resume.skills}")
-    p.drawString(50,700,f"Score: {resume.score}%")
-    p.drawString(50,675,"Generated by Smart Resume Analyzer")
+    p.setFont("Helvetica", 12)
+    p.drawString(50, 750, f"Candidate: {resume.name}")
+    p.drawString(50, 725, f"Skills: {resume.skills}")
+    p.drawString(50, 700, f"Score: {resume.score}%")
 
     p.showPage()
     p.save()
